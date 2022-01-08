@@ -73,6 +73,9 @@ class Offer(db.Model):
         }
 
 
+db.create_all()
+
+
 @app.route('/')
 def route():
     pass
