@@ -177,15 +177,56 @@ def orders():
         for order in Order.query.all():
             results.append(order.to_dict())
         return jsonify(results), 200
+    elif request.method == "POST":
+        order_data = json.loads(request.data)
+        new_order = Order(
+            name=order_data["name"],
+            description=order_data["description"],
+            start_date=order_data["start_date"],
+            end_date=order_data["end_date"],
+            address=order_data["address"],
+            price=order_data["price"],
+            customer_id=order_data["customer_id"],
+            executor_id=order_data["executor_id"]
+        )
+        db.session.add(new_order)
+        db.session.commit()
+        return jsonify(new_order.to_dict()), 200
 
 
-@app.route("/orders/<int:oid>", methods=['GET'])
+@app.route("/orders/<int:oid>", methods=['GET', 'DELETE', 'PUT'])
 def get_order(oid: int):
-    order = Order.query.get(oid)
-    if order:
-        return jsonify(order.to_dict()), 200
-    else:
-        return f"No order found with id: {oid}", 404
+    if request.method == "GET":
+        order = Order.query.get(oid)
+        if order:
+            return jsonify(order.to_dict()), 200
+        else:
+            return f"No order found with id: {oid}", 404
+    elif request.method == "DELETE":
+        order = Order.query.get(oid)
+        if order:
+            db.session.delete(order)
+            db.session.commit()
+            return "", 204
+        else:
+            return f"No order found with id: {oid}", 404
+    elif request.method == "PUT":
+        new_data = request.json
+        order = Order.query.get(oid)
+        if order:
+            order.name = new_data.get("name")
+            order.description = new_data.get("description")
+            order.start_date = new_data.get("start_date")
+            order.end_date = new_data.get("end_date")
+            order.address = new_data.get("address")
+            order.price = new_data.get("price")
+            order.customer_id = new_data.get("customer_id")
+            order.executor_id = new_data.get("executor_id")
+            db.session.add(order)
+            db.session.commit()
+            return "", 201
+        else:
+            return f"No order found with id: {oid}", 404
 
 
 @app.route("/offers", methods=['GET', 'POST'])
@@ -195,15 +236,44 @@ def offers():
         for offer in Offer.query.all():
             results.append(offer.to_dict())
         return jsonify(results), 200
+    elif request.method == "POST":
+        offer_data = json.loads(request.data)
+        new_offer = Offer(
+            order_id=offer_data["order_id"],
+            executor_id=offer_data["executor_id"]
+        )
+        db.session.add(new_offer)
+        db.session.commit()
+        return jsonify(new_offer.to_dict()), 200
 
 
-@app.route("/offers/<int:ofid>", methods=['GET'])
+@app.route("/offers/<int:ofid>", methods=['GET', 'DELETE', 'PUT'])
 def get_offer(ofid: int):
-    offer = Offer.query.get(ofid)
-    if offer:
-        return jsonify(offer.to_dict()), 200
-    else:
-        return f"No offer found with id: {ofid}", 404
+    if request.method == "GET":
+        offer = Offer.query.get(ofid)
+        if offer:
+            return jsonify(offer.to_dict()), 200
+        else:
+            return f"No offer found with id: {ofid}", 404
+    elif request.method == 'DELETE':
+        offer = Offer.query.get(ofid)
+        if offer:
+            db.session.delete(offer)
+            db.session.commit()
+            return "", 204
+        else:
+            return f"No offer found with id: {ofid}", 404
+    elif request.method == "PUT":
+        new_data = request.json
+        offer = Offer.query.get(ofid)
+        if offer:
+            offer.order_id = new_data.get("order_id")
+            offer.executor_id = new_data.get("executor_id")
+            db.session.add(offer)
+            db.session.commit()
+            return "", 201
+        else:
+            return f"No offer found with id: {ofid}", 404
 
 
 if __name__ == "__main__":
