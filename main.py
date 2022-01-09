@@ -122,15 +122,52 @@ def users():
         for user in User.query.all():
             results.append(user.to_dict())
         return jsonify(results), 200
+    elif request.method == "POST":
+        user_data = json.loads(request.data)
+        new_user = User(
+            first_name=user_data["first_name"],
+            last_name=user_data["last_name"],
+            age=user_data["age"],
+            email=user_data["email"],
+            role=user_data["role"],
+            phone=user_data["phone"]
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify(new_user.to_dict()), 200
 
 
-@app.route("/users/<int:uid>", methods=['GET'])
-def get_user(uid):
-    user = User.query.get(uid)
-    if user:
-        return jsonify(user.to_dict()), 200
-    else:
-        return f"No user found with id: {uid}", 404
+@app.route("/users/<int:uid>", methods=['GET', 'DELETE', 'PUT'])
+def get_user(uid: int):
+    if request.method == "GET":
+        user = User.query.get(uid)
+        if user:
+            return jsonify(user.to_dict()), 200
+        else:
+            return f"No user found with id: {uid}", 404
+    elif request.method == 'DELETE':
+        user = User.query.get(uid)
+        if user:
+            db.session.delete(user)
+            db.session.commit()
+            return "", 204
+        else:
+            return f"No user found with id: {uid}", 404
+    elif request.method == 'PUT':
+        new_data = request.json
+        user = User.query.get(uid)
+        if user:
+            user.first_name = new_data.get("first_name")
+            user.last_name = new_data.get("last_name")
+            user.age = new_data.get("age")
+            user.email = new_data.get("email")
+            user.role = new_data.get("role")
+            user.phone = new_data.get("phone")
+            db.session.add(user)
+            db.session.commit()
+            return "", 201
+        else:
+            return f"No user found with id: {uid}", 404
 
 
 @app.route("/orders", methods=['GET', 'POST'])
@@ -143,7 +180,7 @@ def orders():
 
 
 @app.route("/orders/<int:oid>", methods=['GET'])
-def get_order(oid):
+def get_order(oid: int):
     order = Order.query.get(oid)
     if order:
         return jsonify(order.to_dict()), 200
@@ -161,7 +198,7 @@ def offers():
 
 
 @app.route("/offers/<int:ofid>", methods=['GET'])
-def get_offer(ofid):
+def get_offer(ofid: int):
     offer = Offer.query.get(ofid)
     if offer:
         return jsonify(offer.to_dict()), 200
